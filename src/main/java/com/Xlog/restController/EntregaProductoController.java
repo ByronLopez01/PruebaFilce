@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.Xlog.clases.GpioModulo;
 
 @RestController
-@RequestMapping("API/EntregaProducto")
+@RequestMapping("/API/EntregaProducto")
 public class EntregaProductoController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(BienvenidoController.class);

@@ -13,7 +13,7 @@ import com.Xlog.clases.GpioModulo;
 
 
 @RestController
-@RequestMapping("API/Bienvenido")
+@RequestMapping("/API/Bienvenido")
 public class BienvenidoController {
 
 	private static final Logger logger = LoggerFactory.getLogger(BienvenidoController.class);

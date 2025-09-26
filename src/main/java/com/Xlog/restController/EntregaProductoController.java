@@ -32,4 +32,31 @@ public class EntregaProductoController {
 		return ResponseEntity.ok("Sucess");
 	}
 
+	@GetMapping("/Imprimir")
+	public ResponseEntity<String> imprimirContacto(){
+		
+		//String zpl = GpioModulo.generarEtiqueta("Byron Lopez", "+5696337788");
+		String zpl = GpioModulo.generarEtiquetaStilo("Byron Lopez", "+5696337788");
+		
+		GpioModulo.imprimirZPLEnZebra(zpl);
+		return ResponseEntity.ok("");
+	}
+	
+	
+	@GetMapping("/TestSerie")
+	public ResponseEntity<String> testPuertoserie(){
+		
+		double peso = GpioModulo.leerPuertoSerie3();
+		
+		return ResponseEntity.ok("Peso: "+peso);
+		
+	}
+	@GetMapping("/TestBalanza")
+	public ResponseEntity<String> testBalanza(){
+		
+		double peso = GpioModulo.leerPuertoEscuelamilitar();
+		
+		return ResponseEntity.ok("Peso: "+peso);
+		
+	}
 }

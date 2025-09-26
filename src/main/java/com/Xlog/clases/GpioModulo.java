@@ -28,6 +28,18 @@ import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.print.Doc;
+
+import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.SimpleDoc;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Copies;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -36,6 +48,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.FileCopyUtils;
+
+
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
@@ -57,6 +71,9 @@ import com.pi4j.io.serial.SerialDataEventListener;
 import com.pi4j.io.serial.SerialFactory;
 import com.pi4j.io.serial.StopBits;
 import com.pi4j.wiringpi.GpioUtil;
+
+import jssc.SerialPort;
+import jssc.SerialPortException;
 
 
 
@@ -596,6 +613,349 @@ public class GpioModulo {
 		gpio.unprovisionPin(pinClasificador);
 		gpio.shutdown();
 	}
+	
+	
+	
+	/* Implementar metodo valido para imprimir en impresora zebra */
+	public static void imprimirZPLEnZebra(String zplResponse) {
+		if (zplResponse == null || zplResponse.isEmpty()) {
+			logger.error("Respuesta ZPL vacía o nula");
+			return;
+		}
+
+		try {
+			// limpiar zpl
+			String zpl = extraerZPLDeRespuesta(zplResponse);
+			
+			zpl = ajustarZPLParaCorteManual(zpl);
+			
+			//String modoDirectThermal = "^XA\n^MTD\n^XZ\n";
+	        //String zplConModo = modoDirectThermal + zpl;
+			// imprimir etiqueta
+			imprimirZPLCrudo(zpl);
+
+			logger.info("ZPL enviado a impresora Zebra correctamente");
+		} catch (Exception e) {
+			logger.error("Error al imprimir en Zebra: {}", e.getMessage());
+		}
+	}
+
+	/**
+	 * Metodo que extrae el ZPL del formato JSON ["..."]
+	 */
+	private static String extraerZPLDeRespuesta(String jsonResponse) {
+		
+		logger.info("ZPL antes de limpiar " + jsonResponse);
+		String limpio = jsonResponse.replaceAll("^\\[\"|\"\\]$", "");
+		
+	    // Decodificar secuencias de escape si las hay
+	    limpio = limpio.replace("\\n", "\n").replace("\\\"", "\"");
+	    logger.info("ZPL limpio " + limpio);
+	    return limpio;
+	}
+
+	/**
+	 * Metodo que envia el ZPL directamente a la impresora
+	 */
+	private static void imprimirZPLCrudo(String zpl) throws IOException {
+		 try {
+		        byte[] zplBytes = zpl.getBytes("US-ASCII");
+
+		        DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
+		        Doc doc = new SimpleDoc(zplBytes, flavor, null);
+
+		        PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+		        PrintService zebra = null;
+		        for (PrintService service : services) {
+		            if (service.getName().contains("ZDesigner ZD230")) { // cambia si el nombre es diferente en tu PC
+		                zebra = service;
+		                break;
+		            }
+		        }
+
+		        if (zebra != null) {
+		           
+		        	DocPrintJob job = zebra.createPrintJob();
+		            PrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
+		            attrs.add(new Copies(1));
+		            job.print(doc, attrs);
+
+		            logger.info("ZPL enviado correctamente a la impresora Zebra por USB.");
+		        } else {
+		            logger.error("No se encontró la impresora Zebra ZD230 instalada en el sistema.");
+		        }
+		    } catch (PrintException e) {
+		        logger.error("Error al imprimir en Zebra: {}", e.getMessage());
+		    }
+	}
+
+	
+	private static String ajustarZPLParaCorteManual(String zpl) {
+	    // 1. Reemplazar ^MMC (Cutter) por ^MMT (Tear Off)
+	    zpl = zpl.replaceAll("\\^MMC", "^MMT");
+	    
+	    // 2. Asegurar que ^PQ (Print Quantity) tenga el parámetro de corte correcto
+	    zpl = zpl.replaceAll("\\^PQ[^\\^]*", "^PQ1,0,1,N");  // N = No rebobinar
+	    
+	    // 3. Opcional: Añadir comandos de calibración si es necesario
+	    if (!zpl.contains("^MC")) {
+	        zpl = zpl.replaceFirst("\\^XA", "^XA\n^MCY");  // ^MCY = Calibrar al inicio
+	    }
+	    
+	    logger.info("ZPL modificado para corte manual: " + zpl);
+	    return zpl;
+	}
+
+	public static String generarEtiqueta(String nombre, String telefono) {
+	    return "^XA\n" +
+	           "^FO50,50^A0N,40,40^FDNombre: " + nombre + "^FS\n" +
+	           "^FO50,100^A0N,40,40^FDContacto: " + telefono + "^FS\n" +
+	           "^XZ";
+	}
+	
+	public static String generarEtiquetaStilo(String nombre, String telefono) {
+	    return "^XA\n" +
+	           // Cuadro 
+	           "^FO30,30^GB540,140,4^FS\n" + 
+
+	           // Nombre
+	           "^FO50,50^A0N,50,50^FDNombre:^FS\n" +
+	           "^FO250,50^A0N,50,50^FD" + nombre + "^FS\n" +
+
+	           // Contacto
+	           "^FO50,120^A0N,40,40^FDContacto:^FS\n" +
+	           "^FO200,120^A0N,40,40^FD" + telefono + "^FS\n" +
+
+	           // QR centrado 
+	           "^FO200,300^BQN,2,10^FDLA,https://www.xlog.com^FS\n" +
+
+	           // Pie de página
+	           "^FO0,720^A0N,50,50^F1000,1,0,C,0^FDXlog^FS\n" +
+	           "^XZ";
+	}
+
+	
+	public static double leerPuertoSerie3() {
+	    double peso = 0;
+	    boolean pesoValido = false;
+
+	    SerialPort serialPort = null;
+
+	    try {
+	        serialPort = new SerialPort("/dev/ttyUSB0");
+	        serialPort.openPort();
+	        serialPort.setParams(
+	                SerialPort.BAUDRATE_9600,
+	                SerialPort.DATABITS_8,
+	                SerialPort.STOPBITS_1,
+	                SerialPort.PARITY_NONE
+	        );
+
+	        int tiempoMaximoEspera = 10000;
+	        long tiempoInicio = System.currentTimeMillis();
+
+	        while (!pesoValido && (System.currentTimeMillis() - tiempoInicio) < tiempoMaximoEspera) {
+	            if (serialPort.getInputBufferBytesCount() > 0) {
+	                byte[] buffer = serialPort.readBytes(serialPort.getInputBufferBytesCount());
+	                String line = new String(buffer, StandardCharsets.US_ASCII);
+	                System.out.println("RAW recibido: " + line);
+
+	                // Filtrar solo dígitos y punto
+	                line = line.replaceAll("[^\\d.]", "");
+	                System.out.println("Datos filtrados: " + line);
+
+	                // Intentar tomar el último número válido
+	                try {
+	                    if (!line.isEmpty()) {
+	                        peso = Double.parseDouble(line);
+	                        pesoValido = true;
+	                        System.out.println("Peso válido encontrado: " + peso);
+	                    }
+	                } catch (NumberFormatException e) {
+	                    System.out.println("No se pudo parsear el peso: " + line);
+	                }
+	            }
+
+	            try {
+	                Thread.sleep(100);
+	            } catch (InterruptedException e) {
+	                e.printStackTrace();
+	            }
+	        }
+
+	    } catch (SerialPortException ex) {
+	        System.out.println("Error al leer datos del puerto serial: " + ex.getMessage());
+	    } finally {
+	        try {
+	            if (serialPort != null && serialPort.isOpened()) {
+	                serialPort.closePort();
+	            }
+	        } catch (SerialPortException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    if (!pesoValido) {
+	        peso = 0.32;
+	        System.out.println("Murió la pesa :(");
+	    }
+
+	    return peso;
+	}
+
+
+	public static double leerPuertoEscuelamilitar() {
+	    double peso = 0;
+	    boolean pesoValido = false;
+
+	    SerialPort serialPort = null;
+
+	    try {
+	        serialPort = new SerialPort("/dev/ttyUSB0");
+	        serialPort.openPort();
+	        serialPort.setParams(
+	                SerialPort.BAUDRATE_9600,
+	                SerialPort.DATABITS_8,
+	                SerialPort.STOPBITS_1,
+	                SerialPort.PARITY_NONE
+	        );
+
+	        int tiempoMaximoEspera = 10000;
+	        long tiempoInicio = System.currentTimeMillis();
+
+	        Pattern patronPeso = Pattern.compile("(-?\\d+\\.\\d+)k"); 
+	        // Captura números con decimales seguidos de 'k'
+
+	        while (!pesoValido && (System.currentTimeMillis() - tiempoInicio) < tiempoMaximoEspera) {
+	            if (serialPort.getInputBufferBytesCount() > 0) {
+	                byte[] buffer = serialPort.readBytes(serialPort.getInputBufferBytesCount());
+	                String line = new String(buffer, StandardCharsets.US_ASCII);
+	                System.out.println("RAW recibido: " + line);
+
+	                Matcher matcher = patronPeso.matcher(line);
+	                if (matcher.find()) {
+	                    try {
+	                        peso = Double.parseDouble(matcher.group(1));
+	                        pesoValido = true;
+	                        System.out.println("Peso válido encontrado: " + peso + " kg");
+	                    } catch (NumberFormatException e) {
+	                        System.out.println("No se pudo parsear el peso en: " + matcher.group(1));
+	                    }
+	                } else {
+	                    System.out.println("No se encontró número con formato en la línea");
+	                }
+	            }
+
+	            try {
+	                Thread.sleep(100);
+	            } catch (InterruptedException e) {
+	                e.printStackTrace();
+	            }
+	        }
+
+	    } catch (SerialPortException ex) {
+	        System.out.println("Error al leer datos del puerto serial: " + ex.getMessage());
+	    } finally {
+	        try {
+	            if (serialPort != null && serialPort.isOpened()) {
+	                serialPort.closePort();
+	            }
+	        } catch (SerialPortException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    if (!pesoValido) {
+	        peso = 0.32; // Valor fallback
+	        System.out.println("Murió la pesa :(");
+	    }
+
+	    return peso;
+	}
+	
+	
+	public static double leerPuertoSerieDebug() {
+		 double peso = 0;
+		    boolean pesoValido = false;
+
+		    SerialPort serialPort = null;
+
+		    try {
+		        serialPort = new SerialPort("/dev/ttyUSB0");
+		        serialPort.openPort();
+		        serialPort.setParams(
+		                SerialPort.BAUDRATE_9600,
+		                SerialPort.DATABITS_8,
+		                SerialPort.STOPBITS_1,
+		                SerialPort.PARITY_NONE
+		        );
+
+		        int tiempoMaximoEspera = 10000; // 10 segundos
+		        long tiempoInicio = System.currentTimeMillis();
+
+		        while (!pesoValido && (System.currentTimeMillis() - tiempoInicio) < tiempoMaximoEspera) {
+		            if (serialPort.getInputBufferBytesCount() > 0) {
+		                byte[] buffer = serialPort.readBytes(serialPort.getInputBufferBytesCount());
+		                String raw = new String(buffer, StandardCharsets.US_ASCII);
+		                System.out.println("RAW recibido: " + raw);
+
+		                // Regex: = dos letras o números + + + número decimal + opcional letra
+		                Pattern pattern = Pattern.compile("=[A-Z0-9]{2}\\+([0-9]+\\.[0-9]+)[a-zA-Z]?");
+		                Matcher matcher = pattern.matcher(raw);
+
+		                if (matcher.find()) {
+		                    String valor = matcher.group(1);
+		                    try {
+		                        peso = Double.parseDouble(valor);
+		                        System.out.println("Peso válido encontrado: " + peso);
+		                        pesoValido = true;
+		                        break; // tomamos solo el primer peso válido
+		                    } catch (NumberFormatException e) {
+		                        System.out.println("Error parseando peso: " + valor);
+		                    }
+		                }
+		            }
+
+		            try {
+		                Thread.sleep(100);
+		            } catch (InterruptedException e) {
+		                e.printStackTrace();
+		            }
+		        }
+
+		    } catch (SerialPortException ex) {
+		        System.out.println("Error al leer datos del puerto serial: " + ex.getMessage());
+		    } finally {
+		        try {
+		            if (serialPort != null && serialPort.isOpened()) {
+		                serialPort.closePort();
+		            }
+		        } catch (SerialPortException e) {
+		            e.printStackTrace();
+		        }
+		    }
+
+		    if (!pesoValido) {
+		        peso = 0.0; // valor por defecto si no se recibe peso válido
+		        System.out.println("No se recibió peso válido en el tiempo de espera.");
+		    }
+
+		    return peso;
+	}
+
+	    
+	public static double leerDatosBalanza() {
+
+		double peso;
+
+
+		leerPuertoSerie3();
+		peso = leerPuertoSerie3();
+		logger.info("Peso " + peso);
+		return peso;
+
+	}
+
 
 }
 

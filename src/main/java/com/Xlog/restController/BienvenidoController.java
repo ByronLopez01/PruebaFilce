@@ -22,6 +22,7 @@ public class BienvenidoController {
 	public ResponseEntity<String> IngresoCodigo(@PathVariable String codigo) {
 		
 		logger.info("Codigo Escaneado: " + codigo);
+		
 		if (GpioModulo.status_puertaDelantera()) {
 			if (GpioModulo.status_puertaTrasera()) {
 				logger.info("-------Abriendo puerta trasera-------");

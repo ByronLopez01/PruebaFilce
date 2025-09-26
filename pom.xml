@@ -50,6 +50,13 @@
 			<artifactId>pi4j-core</artifactId>
 			<version>1.4</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>io.github.java-native</groupId>
+			<artifactId>jssc</artifactId>
+			<version>2.9.4</version>
+		</dependency>
+		
 	</dependencies>
 
 	<build>

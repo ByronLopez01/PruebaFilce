@@ -667,7 +667,7 @@ public class GpioModulo {
 		        PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
 		        PrintService zebra = null;
 		        for (PrintService service : services) {
-		            if (service.getName().contains("ZDesigner ZD230")) { // cambia si el nombre es diferente en tu PC
+		            if (service.getName().contains("ZTC-ZD230-203dpi-ZPL")) { // cambia si el nombre es diferente en tu PC
 		                zebra = service;
 		                break;
 		            }
@@ -730,7 +730,7 @@ public class GpioModulo {
 	           "^FO200,300^BQN,2,10^FDLA,https://www.xlog.com^FS\n" +
 
 	           // Pie de página
-	           "^FO0,720^A0N,50,50^F1000,1,0,C,0^FDXlog^FS\n" +
+	           "^FO0,720^A0N,100,50^F1000,1,0,C,0^FDXlog^FS\n" +
 	           "^XZ";
 	}
 

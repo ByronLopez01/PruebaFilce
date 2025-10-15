@@ -957,6 +957,55 @@ public class GpioModulo {
 	}
 
 
+	// Espera indefinidamente hasta que el pin cambie de estado
+	public static boolean esperarCambioEstadoPin(int pinGpio) {
+        logger.info("Iniciando monitoreo de cambio de estado en GPIO_" + pinGpio);
+        
+        final GpioController gpio = GpioFactory.getInstance();
+        GpioPinDigitalInput pinMonitoreo = null;
+        
+        try {
+            // Configurar el pin como entrada con resistencia pull-down
+            pinMonitoreo = gpio.provisionDigitalInputPin(
+                RaspiPin.getPinByAddress(pinGpio),
+                "PinMonitoreo",
+                PinPullResistance.PULL_DOWN
+            );
+            
+            // Capturar el estado inicial del pin
+            boolean estadoInicial = pinMonitoreo.isHigh();
+            logger.info("Estado inicial del pin: " + (estadoInicial ? "HIGH" : "LOW"));
+            logger.info("Esperando cambio de estado...");
+            
+            // Esperar indefinidamente hasta detectar un cambio de estado
+            while (true) {
+                boolean estadoActual = pinMonitoreo.isHigh();
+                
+                // Verificar si hubo cambio de estado
+                if (estadoActual != estadoInicial) {
+                    logger.info("Cambio de estado detectado: " + 
+                        (estadoInicial ? "HIGH -> LOW" : "LOW -> HIGH"));
+                    gpio.unprovisionPin(pinMonitoreo);
+                    gpio.shutdown();
+                    return true;
+                }
+                
+                // Pequeña pausa
+                Thread.sleep(50);
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error al monitorear cambio de estado: " + e.getMessage(), e);
+            if (pinMonitoreo != null) {
+                gpio.unprovisionPin(pinMonitoreo);
+            }
+            gpio.shutdown();
+            return false;
+        }
+    }
+
+
+
 }
 
 

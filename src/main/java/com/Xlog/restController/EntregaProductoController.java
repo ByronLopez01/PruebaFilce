@@ -20,6 +20,23 @@ public class EntregaProductoController {
 	@GetMapping("/Entregando")
 	public ResponseEntity<String> entregaProducto() {
 		
+		// Esperar indefinidamente el cambio de estado en el pin GPIO_26
+        logger.info("Esperando señal del botón para iniciar entrega...");
+        boolean cambioDetectado = GpioModulo.esperarCambioEstadoPin(26);
+
+		if (!cambioDetectado) {
+            logger.error("Error al detectar cambio de estado");
+            return ResponseEntity.ok("Error en la detección");
+        }
+        
+        logger.info("Señal detectada - Iniciando proceso de entrega");
+
+
+		logger.info("-------Cerrando puerta Delantera-------");
+		GpioModulo.ONLY_CerrarPuertaTrasera();
+        logger.info("Puerta trasera cerrada");
+        
+
 		GpioModulo.apagarLuz();
 		
 		if (GpioModulo.check_puertaTrasera_cerrada()) {

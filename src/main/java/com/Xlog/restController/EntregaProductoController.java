@@ -22,19 +22,7 @@ public class EntregaProductoController {
 		
 		// Esperar indefinidamente el cambio de estado en el pin GPIO_5
         logger.info("Esperando señal del botón para iniciar entrega...");
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-        boolean cambioDetectado = GpioModulo.esperarCambioEstadoPin(5);
 
-		if (!cambioDetectado) {
-            logger.error("Error al detectar cambio de estado");
-            return ResponseEntity.ok("Error en la detección");
-        }
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-        
 
         while (GpioModulo.esperarCambioEstadoPin() ==false) {
 		}

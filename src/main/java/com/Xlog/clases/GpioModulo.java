@@ -973,48 +973,6 @@ public class GpioModulo {
 
 
 	// Espera indefinidamente hasta que el pin cambie de estado
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-	public static boolean esperarCambioEstadoPin(int pinGpio) {
-        logger.info("Iniciando monitoreo de cambio de estado en GPIO_" + pinGpio);
-        
-        final GpioController gpio = GpioFactory.getInstance();
-        GpioPinDigitalInput pinMonitoreo = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(pinGpio));
-        
-        try {
-            // Capturar el estado inicial del pin
-            boolean estadoInicial = pinMonitoreo.isHigh();
-            logger.info("Estado inicial del pin: " + (estadoInicial ? "HIGH" : "LOW"));
-            logger.info("Esperando cambio de estado...");
-            
-            // Esperar indefinidamente hasta detectar un cambio de estado
-            while (true) {
-                boolean estadoActual = pinMonitoreo.isHigh();
-                
-                // Verificar si hubo cambio de estado
-                if (estadoActual != estadoInicial) {
-                    logger.info("Cambio de estado detectado: " + 
-                        (estadoInicial ? "HIGH -> LOW" : "LOW -> HIGH"));
-                    gpio.unprovisionPin(pinMonitoreo);
-                    gpio.shutdown();
-                    return true;
-                }
-                
-                // Pequeña pausa
-                Thread.sleep(50);
-            }
-            
-        } catch (Exception e) {
-            logger.error("Error al monitorear cambio de estado: " + e.getMessage(), e);
-            if (pinMonitoreo != null) {
-                gpio.unprovisionPin(pinMonitoreo);
-            }
-            gpio.shutdown();
-            return false;
-        }
-=======
-=======
->>>>>>> Stashed changes
 	public static boolean esperarCambioEstadoPin() {
 		final GpioController gpio = GpioFactory.getInstance();
 
@@ -1045,10 +1003,7 @@ public class GpioModulo {
 		gpio.unprovisionPin(pinLOw);
 		gpio.shutdown();
 		return status;
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+
     }
 
 

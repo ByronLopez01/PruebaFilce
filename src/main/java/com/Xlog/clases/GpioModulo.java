@@ -974,6 +974,7 @@ public class GpioModulo {
 
 	// Espera indefinidamente hasta que el pin cambie de estado
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	public static boolean esperarCambioEstadoPin(int pinGpio) {
         logger.info("Iniciando monitoreo de cambio de estado en GPIO_" + pinGpio);
         
@@ -1012,6 +1013,8 @@ public class GpioModulo {
             return false;
         }
 =======
+=======
+>>>>>>> Stashed changes
 	public static boolean esperarCambioEstadoPin() {
 		final GpioController gpio = GpioFactory.getInstance();
 
@@ -1042,6 +1045,9 @@ public class GpioModulo {
 		gpio.unprovisionPin(pinLOw);
 		gpio.shutdown();
 		return status;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     }
 

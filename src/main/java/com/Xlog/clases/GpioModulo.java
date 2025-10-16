@@ -714,24 +714,39 @@ public class GpioModulo {
 	}
 	
 	public static String generarEtiquetaStilo(String nombre, String telefono) {
-	    return "^XA\n" +
-	           // Cuadro 
-	           "^FO30,30^GB540,140,4^FS\n" + 
+	    return  "^XA\n" +
+	    		//tildes
+	    		"^CI28"+
+	    		// Fuente y tamaño base
+	    		"^CF0,30\n" +
 
-	           // Nombre
-	           "^FO50,50^A0N,50,50^FDNombre:^FS\n" +
-	           "^FO250,50^A0N,50,50^FD" + nombre + "^FS\n" +
+	    		// Encabezado 
+	    		"^FO0,50^FB799,1,0,C,0^FDXlog Soluciones Logísticas S.P.A.^FS\n" +
+	    		// Nombre y cargo
+	    		"^CF0,25\n" +
+	    		"^FO100,100^FB600,1,0,C,0^FD" + nombre + "^FS\n" +
+	    		"^FO100,130^FB600,1,0,C,0^FDGerente Comercial^FS\n" +
+	    		// Teléfono
+	    		"^CF0,22\n" +
+	    		"^FO100,170^FB600,1,0,C,0^FD" + telefono + "^FS\n" +
 
-	           // Contacto
-	           "^FO50,120^A0N,40,40^FDContacto:^FS\n" +
-	           "^FO200,120^A0N,40,40^FD" + telefono + "^FS\n" +
+	    		// Línea separadora
+	    		"^FO0,200^GB8000,1,3^FS\n" +
 
-	           // QR centrado 
-	           "^FO200,300^BQN,2,10^FDLA,https://www.xlog.com^FS\n" +
+	    		// contacto
+	    		"^CF0,18\n" +
+	    				           "^FO100,230^FB600,1,0,C,0^FDwww.xlog.cl^FS\n" +
+	    				           "^FO100,255^FB600,1,0,C,0^FDcontacto@xlog.cl^FS\n" +
 
-	           // Pie de página
-	           "^FO0,720^A0N,100,50^F1000,1,0,C,0^FDXlog^FS\n" +
-	           "^XZ";
+	    		// Primer QR (web) 
+	    				           "^FO320,300^BQN,5,7^FDQA,https://www.xlog.cl^FS\n" +
+	    		"^FO110,500^FB600,1,0,C,0^FDWeb^FS\n" +
+
+	    		// Segundo QR (WhatsApp) 
+	    		"^FO320,550^BQN,2,6^FDQA,https://wa.me/" + telefono + "^FS\n" +
+	    		"^FO110,750^FB600,1,0,C,0^FDWhatsApp^FS\n" +
+
+	    		"^XZ";
 	}
 
 	
@@ -962,16 +977,9 @@ public class GpioModulo {
         logger.info("Iniciando monitoreo de cambio de estado en GPIO_" + pinGpio);
         
         final GpioController gpio = GpioFactory.getInstance();
-        GpioPinDigitalInput pinMonitoreo = null;
+        GpioPinDigitalInput pinMonitoreo = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(pinGpio));
         
         try {
-            // Configurar el pin como entrada con resistencia pull-down
-            pinMonitoreo = gpio.provisionDigitalInputPin(
-                RaspiPin.getPinByAddress(pinGpio),
-                "PinMonitoreo",
-                PinPullResistance.PULL_DOWN
-            );
-            
             // Capturar el estado inicial del pin
             boolean estadoInicial = pinMonitoreo.isHigh();
             logger.info("Estado inicial del pin: " + (estadoInicial ? "HIGH" : "LOW"));

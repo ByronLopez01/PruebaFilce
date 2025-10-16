@@ -20,9 +20,9 @@ public class EntregaProductoController {
 	@GetMapping("/Entregando")
 	public ResponseEntity<String> entregaProducto() {
 		
-		// Esperar indefinidamente el cambio de estado en el pin GPIO_26
+		// Esperar indefinidamente el cambio de estado en el pin GPIO_5
         logger.info("Esperando señal del botón para iniciar entrega...");
-        boolean cambioDetectado = GpioModulo.esperarCambioEstadoPin(26);
+        boolean cambioDetectado = GpioModulo.esperarCambioEstadoPin(5);
 
 		if (!cambioDetectado) {
             logger.error("Error al detectar cambio de estado");

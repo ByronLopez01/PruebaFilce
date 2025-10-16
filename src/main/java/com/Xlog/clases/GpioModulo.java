@@ -955,6 +955,30 @@ public class GpioModulo {
 		return peso;
 
 	}
+	
+	public static boolean statusBotonConfirmacion() {
+
+		final Pin pinBoton = RaspiPin.GPIO_27; 
+		
+		final GpioController gpio = GpioFactory.getInstance();
+
+		GpioPinDigitalInput pinInput = gpio.provisionDigitalInputPin(pinBoton, PinPullResistance.PULL_DOWN);
+
+		boolean estaPresionado = pinInput.isHigh();
+		
+		if(estaPresionado) {
+			logger.info("Botón de confirmación PRESIONADO (estado HIGH)");
+		} else {
+
+			// logger.info("Botón de confirmación sin presionar (estado LOW)");
+		}
+
+		gpio.unprovisionPin(pinInput);
+		gpio.shutdown();
+
+		return estaPresionado;
+	}
+
 
 
 }

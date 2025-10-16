@@ -22,14 +22,19 @@ public class EntregaProductoController {
 		
 		// Esperar indefinidamente el cambio de estado en el pin GPIO_5
         logger.info("Esperando señal del botón para iniciar entrega...");
+<<<<<<< Updated upstream
         boolean cambioDetectado = GpioModulo.esperarCambioEstadoPin(5);
 
 		if (!cambioDetectado) {
             logger.error("Error al detectar cambio de estado");
             return ResponseEntity.ok("Error en la detección");
         }
+=======
+>>>>>>> Stashed changes
         
-        logger.info("Señal detectada - Iniciando proceso de entrega");
+
+        while (GpioModulo.esperarCambioEstadoPin() ==false) {
+		}
 
 
 		logger.info("-------Cerrando puerta Delantera-------");
@@ -55,7 +60,7 @@ public class EntregaProductoController {
 	public ResponseEntity<String> imprimirContacto(){
 		
 		//String zpl = GpioModulo.generarEtiqueta("Byron Lopez", "+5696337788");
-		String zpl = GpioModulo.generarEtiquetaStilo("Byron Lopez", "+5696337788");
+		String zpl = GpioModulo.generarEtiquetaStilo("María José Hurtado", "+56998175101");
 		
 		GpioModulo.imprimirZPLEnZebra(zpl);
 		return ResponseEntity.ok("");

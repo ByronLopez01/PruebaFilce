@@ -93,7 +93,7 @@ public class GpioModulo {
 
 		final GpioController gpio = GpioFactory.getInstance();
 
-		GpioPinDigitalOutput pinLuz = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_07);
+		GpioPinDigitalOutput pinLuz = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00);
 		pinLuz.low();
 		gpio.unprovisionPin(pinLuz);
 		gpio.shutdown();
@@ -104,7 +104,7 @@ public class GpioModulo {
 
 		final GpioController gpio = GpioFactory.getInstance();
 
-		GpioPinDigitalOutput pinLuz = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_07);
+		GpioPinDigitalOutput pinLuz = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00);
 
 		pinLuz.high();
 
@@ -973,6 +973,7 @@ public class GpioModulo {
 
 
 	// Espera indefinidamente hasta que el pin cambie de estado
+<<<<<<< Updated upstream
 	public static boolean esperarCambioEstadoPin(int pinGpio) {
         logger.info("Iniciando monitoreo de cambio de estado en GPIO_" + pinGpio);
         
@@ -1010,6 +1011,38 @@ public class GpioModulo {
             gpio.shutdown();
             return false;
         }
+=======
+	public static boolean esperarCambioEstadoPin() {
+		final GpioController gpio = GpioFactory.getInstance();
+
+		GpioPinDigitalInput pinLOw = gpio.provisionDigitalInputPin(RaspiPin.GPIO_05); // PIN RESISTANCE
+		// (optional)
+
+		// GpioPinDigitalInput pinHigh =
+		// gpio.provisionDigitalInputPin(RaspiPin.GPIO_06);
+		boolean status = false;
+
+		 logger.info("Estatus pin " + pinLOw.getState());
+		// Thread.sleep(1000);
+		if (pinLOw.isHigh()) {
+
+			logger.info("Puerta trasera cerrada");
+
+			status = false;
+
+		} else {
+
+			// if (pinHigh.isHigh()) {
+
+			logger.info("Puerta trasera abierta");
+			// System.out.println(pinHigh.isHigh());
+			status = true;
+
+		}
+		gpio.unprovisionPin(pinLOw);
+		gpio.shutdown();
+		return status;
+>>>>>>> Stashed changes
     }
 
 

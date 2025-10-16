@@ -714,24 +714,37 @@ public class GpioModulo {
 	}
 	
 	public static String generarEtiquetaStilo(String nombre, String telefono) {
-	    return "^XA\n" +
-	           // Cuadro 
-	           "^FO30,30^GB540,140,4^FS\n" + 
-
-	           // Nombre
-	           "^FO50,50^A0N,50,50^FDNombre:^FS\n" +
-	           "^FO250,50^A0N,50,50^FD" + nombre + "^FS\n" +
-
-	           // Contacto
-	           "^FO50,120^A0N,40,40^FDContacto:^FS\n" +
-	           "^FO200,120^A0N,40,40^FD" + telefono + "^FS\n" +
-
-	           // QR centrado 
-	           "^FO200,300^BQN,2,10^FDLA,https://www.xlog.com^FS\n" +
-
-	           // Pie de página
-	           "^FO0,720^A0N,100,50^F1000,1,0,C,0^FDXlog^FS\n" +
-	           "^XZ";
+		 return "^XA\n" +
+		           // Encabezado de la empresa
+		           "^CF0,30\n" +
+		           "^FO50,30^FB500,3,,^FDXlog Soluciones Logisticas S.P.A.^FS\n" +
+		           
+		           // Nombre y cargo
+		           "^CF0,25\n" +
+		           "^FO50,100^FD" + nombre + "^FS\n" +
+		           "^FO50,140^FDGerente Comercial^FS\n" +
+		           
+		           // Teléfono
+		           "^CF0,22\n" +
+		           "^FO50,190^FD" + telefono + "^FS\n" +
+		           
+		           // Línea separadora
+		           "^FO50,230^GB500,1,3^FS\n" +
+		           
+		           // Información de contacto
+		           "^CF0,18\n" +
+		           "^FO50,250^FDwww.xlog.cl^FS\n" +
+		           "^FO50,275^FDcontacto@xlog.cl^FS\n" +
+		           
+		           // QR para página web (izquierda)
+		           "^FO50,320^BQN,2,5^FDQA,https://www.xlog.cl^FS\n" +
+		           "^FO50,320^AF,18^FDWeb^FS\n" +
+		           
+		           // QR para WhatsApp (derecha)
+		           "^FO250,320^BQN,2,5^FDQA,https://wa.me/" + telefono + "^FS\n" +
+		           "^FO250,320^AF,18^FDWhatsApp^FS\n" +
+		           
+		           "^XZ";
 	}
 
 	
@@ -956,6 +969,40 @@ public class GpioModulo {
 
 	}
 
+	
+	public static boolean statusBotonNuevo() {
+		
+		final GpioController gpio = GpioFactory.getInstance();
+
+		//Cambiar pin por pin del boton
+		GpioPinDigitalInput pinLOw = gpio.provisionDigitalInputPin(RaspiPin.GPIO_29); // PIN RESISTANCE
+		
+
+		// GpioPinDigitalInput pinHigh =
+		// gpio.provisionDigitalInputPin(RaspiPin.GPIO_06);
+		boolean status = false;
+
+		// Thread.sleep(1000);
+		
+		if (pinLOw.isHigh()) {
+
+			logger.info("Puerta trasera cerrada");
+
+			status = true;
+
+		} else {
+
+			// if (pinHigh.isHigh()) {
+
+			logger.info("Puerta trasera abierta");
+			// System.out.println(pinHigh.isHigh());
+			status = false;
+
+		}
+		gpio.unprovisionPin(pinLOw);
+		gpio.shutdown();
+		return status;
+	}
 
 }
 

@@ -20,6 +20,11 @@ public class EntregaProductoController {
 	@GetMapping("/Entregando")
 	public ResponseEntity<String> entregaProducto() {
 		
+		while(GpioModulo.statusBotonNuevo()) {}
+		
+		GpioModulo.ONLY_CerrarPuertaTrasera();
+				
+		
 		GpioModulo.apagarLuz();
 		
 		if (GpioModulo.check_puertaTrasera_cerrada()) {
@@ -38,7 +43,7 @@ public class EntregaProductoController {
 	public ResponseEntity<String> imprimirContacto(){
 		
 		//String zpl = GpioModulo.generarEtiqueta("Byron Lopez", "+5696337788");
-		String zpl = GpioModulo.generarEtiquetaStilo("Byron Lopez", "+5696337788");
+		String zpl = GpioModulo.generarEtiquetaStilo("María José Hurtado", "+56998175101");
 		
 		GpioModulo.imprimirZPLEnZebra(zpl);
 		return ResponseEntity.ok("");

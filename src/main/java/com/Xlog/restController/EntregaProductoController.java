@@ -68,6 +68,7 @@ public class EntregaProductoController {
 		}
 	}
 
+	/*
 	@GetMapping("/Imprimir")
 	public ResponseEntity<String> imprimirContacto(){
 		
@@ -76,6 +77,52 @@ public class EntregaProductoController {
 		
 		GpioModulo.imprimirZPLEnZebra(zpl);
 		return ResponseEntity.ok("");
+	}
+	*/
+
+	@GetMapping("/Imprimir")
+	public ResponseEntity<String> imprimirContacto() {
+	    
+	    String nombreImpresora = "ZTC-ZD230-203dpi-ZPL";
+
+	    // 1. Generar y enviar la etiqueta a la cola de impresión.
+	    logger.info("Enviando etiqueta a la impresora ...");
+	    String zpl = GpioModulo.generarEtiquetaStilo("Byron Lopez", "+5696337788");
+	    GpioModulo.imprimirZPLEnZebra(zpl);
+
+	    // 2. Pausa para dar tiempo a que la impresora procese el trabajo.
+	    // Esto bloquea el hilo, pero es aceptable en este contexto de un solo usuario.
+	    try {
+	        logger.info("Esperando 2 segundos para la finalización de la impresión...");
+	        Thread.sleep(2000); 
+	    } catch (InterruptedException e) {
+	        Thread.currentThread().interrupt();
+	        logger.error("El hilo de espera fue interrumpido.", e);
+	        return ResponseEntity.status(500).body("Error interno durante la espera.");
+	    }
+
+	    // 3. Verificar el estado de la cola de impresión DESPUÉS de la pausa.
+	    logger.info("Verificando el estado de la cola de impresión...");
+	    String comandoVerificacion = String.format("lpq -P %s", nombreImpresora);
+	    String estadoCola = GpioModulo.ejecutarComandoConRespuesta(comandoVerificacion);
+
+	    // 4. Analizar la respuesta y tomar una decisión.
+	    // La salida de 'lpq' cuando está vacía usualmente contiene "no entries".
+	    if (estadoCola.contains("no entries")) {
+	        // ÉXITO: La cola está vacía, lo que significa que la etiqueta se imprimió.
+	        logger.info("Éxito: La cola de impresión está vacía. Se asume que la etiqueta fue impresa correctamente.");
+	        return ResponseEntity.ok("Etiqueta impresa correctamente.");
+	        
+	    } else {
+	        // FALLO: La cola todavía tiene trabajos. La impresión falló (sin papel, etc.).
+	        logger.warn("Fallo: El trabajo de impresión sigue en cola. Probable problema con la impresora.");
+	        logger.warn("Procediendo a limpiar la cola de impresión...");
+	        
+	        String comandoCancelacion = String.format("cancel -a %s", nombreImpresora);
+	        GpioModulo.ejecutarComandoConRespuesta(comandoCancelacion);
+	        
+	        return ResponseEntity.status(503).body("Error: No se pudo imprimir la etiqueta. Verifique la impresora.");
+	    }
 	}
 	
 	

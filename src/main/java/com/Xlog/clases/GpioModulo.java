@@ -979,6 +979,41 @@ public class GpioModulo {
 		return estaPresionado;
 	}
 
+	public static String ejecutarComandoConRespuesta(String comando) {
+	    StringBuilder output = new StringBuilder();
+	    Process proceso;
+	    try {
+	        proceso = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", comando });
+	        // Espera a que el comando termine
+	        proceso.waitFor(); 
+
+	        // Leemos la salida del comando
+	        try (BufferedReader reader = new BufferedReader(new InputStreamReader(proceso.getInputStream()))) {
+	            String linea;
+	            while ((linea = reader.readLine()) != null) {
+	                output.append(linea).append(System.lineSeparator());
+	            }
+	        }
+
+	        // Leemos la salida de error para depuración
+	        try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(proceso.getErrorStream()))) {
+	            String linea;
+	            while ((linea = errorReader.readLine()) != null) {
+	                logger.error("Error al ejecutar '{}': {}", comando, linea);
+	                output.append("ERROR: ").append(linea).append(System.lineSeparator());
+	            }
+	        }
+	        
+	    } catch (IOException | InterruptedException e) {
+	        logger.error("Excepción al ejecutar el comando '{}': {}", comando, e.getMessage());
+	        Thread.currentThread().interrupt();
+	        return "ERROR: " + e.getMessage();
+	    }
+	    
+	    logger.info("Salida del comando '{}':\n{}", comando, output.toString().trim());
+	    return output.toString();
+	}
+
 
 
 }
